@@ -22,32 +22,59 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"path/filepath"
 
+	"github.com/mholt/archiver"
 	"github.com/spf13/cobra"
 )
+
+var port string
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Pack your ckans into tar.gz and start local web server that will host this file.",
-	Long:  `Local web server allows you to load your ckans directly into ckan, like from ordinary repository`,
-	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Work your own magic here
-		fmt.Println("serve called")
+	Long:  `Local web server allows you to load your ckans directly into ckan client, like from ordinary repository`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if c := checkWorkspace(); c != nil {
+			return c
+		}
+		pwd, _ := getPwd()
+		// pack repository
+		localPath := filepath.Join("local", "ckan")
+		if verbose {
+			fmt.Printf("Adding files from %s\n", localPath)
+		}
+		files, err := ioutil.ReadDir(localPath)
+		if err != nil {
+			return err
+		}
+		var fileNames []string
+		for _, f := range files {
+			fileNames = append(fileNames, filepath.Join(localPath, f.Name()))
+		}
+		if verbose {
+			fmt.Println("Creating tar.gz")
+		}
+		archiver.TarGz(filepath.Join("cache", "server", "main.tar.gz"), fileNames)
+
+		// serve repository
+		Done("Starting server. CTRL-C to stop. Addres:\n")
+		fmt.Printf("%s | localhost:%s/main.tar.gz\n", filepath.Base(pwd), port)
+		Done("Paste it into CKAN-Settings>New\n")
+		fs := http.FileServer(http.Dir("./cache/server"))
+		http.Handle("/", fs)
+
+		log.Println("Listening...")
+		log.Fatal(http.ListenAndServe(":"+port, nil))
+		return nil
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(serveCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// serveCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// serveCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
+	serveCmd.Flags().StringVarP(&port, "port", "p", "8000", "localhost port")
 }
