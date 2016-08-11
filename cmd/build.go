@@ -57,7 +57,7 @@ func updateAll() error {
 	err = filepath.Walk(filepath.Join(pwd, "local", "netkan"),
 		func(path string, f os.FileInfo, err error) error {
 			if !f.IsDir() {
-				Done("Buiding %s\n", filepath.Base(path))
+				Done("Building %s\n", filepath.Base(path))
 				return updateNetkanFile(path)
 			}
 			return nil
