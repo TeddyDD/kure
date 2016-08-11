@@ -12,6 +12,8 @@ import (
 
 	"io/ioutil"
 
+	"errors"
+
 	"github.com/Songmu/prompter"
 	"github.com/fatih/color"
 	"github.com/ryanuber/columnize"
@@ -40,7 +42,6 @@ type searchMethod int
 const (
 	Simple = iota //Simple search looks for any filename witch contains given string. Case insensitive.
 	Glob          //Glob search uses standard globbing wildcards. If you don't use wildcards then you get strict search
-	Regexp
 )
 
 // getCmd represents the get command
@@ -63,6 +64,9 @@ var getCmd = &cobra.Command{
 		}
 
 		// var found []ckanPackage
+		if len(args) == 0 {
+			return errors.New("You need to provide id as argument!")
+		}
 		var idToFind = args[0]
 		if verbose {
 			fmt.Printf("Looking for extensions:\n%v\n", includeExtensions)
@@ -93,7 +97,7 @@ var getCmd = &cobra.Command{
 					Done("Found %s\n", filepath.Base(selectedPath))
 				} else {
 					Warn("Wrong second argument!\n")
-					return newCommandError("Select package by providing number (int) as second argument!", "get", true)
+					return errors.New("Select package by providing number (int) as second argument!")
 				}
 			} else { // show all found
 				n := color.New(color.Bold).SprintfFunc()
@@ -159,7 +163,7 @@ var getCmd = &cobra.Command{
 			reg := regexp.MustCompile(`(?m)^\s*\"\$kref\"\s?\:\s?\"#\/ckan\/netkan\/(.+)\",?$`)
 			f, e := ioutil.ReadFile(selectedPath)
 			if e != nil {
-				return newCommandError("Could not read souce package while copying", "get", false)
+				return errors.New("Could not read souce package while copying")
 			}
 			isRemote := reg.Match(f)
 			if isRemote {

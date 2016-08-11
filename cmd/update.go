@@ -3,6 +3,7 @@ package cmd
 import (
 	"archive/tar"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -39,7 +40,7 @@ var updateCmd = &cobra.Command{
 			}
 			err := cleanRepo()
 			if err != nil {
-				return newCommandError("Error while cleaning repo cache: "+err.Error(), "update - clean", true)
+				return errors.New("Error while cleaning repo cache: " + err.Error())
 			}
 			return err
 		}
@@ -59,13 +60,13 @@ func init() {
 func downloadNetkan() error {
 	pwd, err := os.Getwd()
 	if err != nil {
-		return newCommandError("Cannot get working directory", "update netkan", false)
+		return errors.New("Cannot get working directory")
 	}
 	path := filepath.Join(pwd, "cache", "bin", "netkan.exe")
 	url := viper.GetString("netkan_exe")
 	err = downloadFile(url, path, true)
 	if err != nil {
-		return newCommandError(err.Error(), "update netkan", false)
+		return err
 	}
 	return nil
 }
@@ -73,11 +74,11 @@ func downloadNetkan() error {
 func downloadRepos() error {
 	pwd, err := os.Getwd()
 	if err != nil {
-		return newCommandError("Cannot get working directory", "update repositories", false)
+		return errors.New("Cannot get working directory")
 	}
 	file, err := os.Open("kure.json")
 	if err != nil {
-		return newCommandError(err.Error(), "update", true)
+		return err
 	}
 	json, err := simplejson.NewFromReader(file)
 	if err != nil {
@@ -89,7 +90,6 @@ func downloadRepos() error {
 	if !noClean {
 		if verbose {
 			Warn("Cleaning up old cached\n")
-			// fmt.Println("Cleaning up old cache")
 		}
 		err = cleanRepo()
 		if err != nil {
@@ -101,22 +101,22 @@ func downloadRepos() error {
 	for _, v := range json.Get("repos").MustArray() {
 		vv, found := v.(map[string]interface{})
 		if !found {
-			return newCommandError("Not found repos array in config file", "update", true)
+			return errors.New("Not found repos array in config file")
 		}
 
 		repoName, found := vv["name"].(string)
 		if !found {
-			return newCommandError("Not found type of repo", "update", true)
+			return errors.New("Not found type of repo")
 		}
 
 		repoType, found := vv["type"].(string)
 		if !found {
-			return newCommandError("Not found type of repo", "update", true)
+			return errors.New("Not found type of repo")
 		}
 
 		url, found := vv["url"].(string)
 		if !found {
-			return newCommandError("Not found url of repo", "update", true)
+			return errors.New("Not found url of repo")
 		}
 
 		//check if not downloaded (enforce uniqe repo names)
@@ -169,7 +169,7 @@ func downloadFile(url, path string, exe bool) error {
 	}
 	defer out.Close()
 	if err != nil {
-		return newCommandError(err.Error(), "update", false)
+		return err
 	}
 	if verbose {
 		fmt.Printf("Downloading file\nfrom: %s\nto: %s\n", url, path)
@@ -177,11 +177,11 @@ func downloadFile(url, path string, exe bool) error {
 	resp, err := http.Get(url)
 	defer resp.Body.Close()
 	if err != nil {
-		return newCommandError(err.Error(), "update", false)
+		return err
 	}
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		return newCommandError(err.Error(), "update", false)
+		return err
 	}
 	if exe {
 		err = os.Chmod(path, 0700)
@@ -189,7 +189,7 @@ func downloadFile(url, path string, exe bool) error {
 		err = os.Chmod(path, 0600)
 	}
 	if err != nil {
-		return newCommandError(err.Error(), "update", false)
+		return err
 	}
 	return nil
 }
@@ -280,7 +280,7 @@ func setAttrs(target string, header *tar.Header) {
 func getPwd() (string, error) {
 	pwd, err := os.Getwd()
 	if err != nil {
-		return "", newCommandError("Cannot get working directory", "update repositories", false)
+		return "", errors.New("Cannot get working directory")
 	}
 	return pwd, nil
 }

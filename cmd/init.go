@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -22,24 +23,24 @@ var initCmd = &cobra.Command{
 	As argument you have to provide directory name. Directory should exist and be empty`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
-			return newCommandError("No directory specified", "init", true)
+			return errors.New("No directory specified")
 		}
 
 		pwd, err := os.Getwd()
 		if err != nil {
-			return newCommandError(err.Error(), "init", false)
+			return err
 		}
 
 		//create directory
 		path := filepath.Join(pwd, args[0])
 		if _, err := os.Stat(path); err == nil {
-			return newCommandError("Directory already exist", "init", true)
+			return errors.New("Directory already exist")
 		}
 
 		//create directory
 		err = os.Mkdir(path, DirPerm)
 		if err != nil {
-			return newCommandError(err.Error(), "init", false)
+			return err
 		}
 		os.Mkdir(filepath.Join(path, "local"), DirPerm)
 		os.MkdirAll(filepath.Join(path, "local", "netkan"), DirPerm)
