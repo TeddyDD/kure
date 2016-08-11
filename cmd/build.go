@@ -72,7 +72,7 @@ func updateNetkanFile(path string) error {
 		return err
 	}
 	cacheDir := viper.GetString("cachedir")
-	outputDir := "./local/ckan"
+	outputDir := filepath.Join("local", "ckan")
 	netkanFile, err := filepath.Rel(pwd, path)
 	if err != nil {
 		return nil
