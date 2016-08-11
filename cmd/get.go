@@ -94,7 +94,7 @@ var getCmd = &cobra.Command{
 			} else { // show all found
 				n := color.New(color.Bold).SprintfFunc()
 				name := color.New(color.FgHiBlue).SprintfFunc()
-				pwdc, err := getPwd()
+				pwdc, err := os.Getwd()
 				if err != nil {
 					return err
 				}
@@ -142,7 +142,7 @@ var getCmd = &cobra.Command{
 		}
 
 		//copy
-		pwd, err := getPwd()
+		pwd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
@@ -195,7 +195,7 @@ func init() {
 
 // get files with given extension and id.
 func getFiles(id string, extensions []string, method searchMethod) ([]string, error) {
-	pwd, err := getPwd()
+	pwd, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}

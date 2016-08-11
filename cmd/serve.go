@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/mholt/archiver"
@@ -43,7 +44,7 @@ var serveCmd = &cobra.Command{
 		if c := checkWorkspace(); c != nil {
 			return c
 		}
-		pwd, _ := getPwd()
+		pwd, _ := os.Getwd()
 		// pack repository
 		localPath := filepath.Join("local", "ckan")
 		if verbose {

@@ -195,7 +195,7 @@ func downloadFile(url, path string, exe bool) error {
 }
 
 func cleanRepo() error {
-	pwd, err := getPwd()
+	pwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
@@ -274,13 +274,4 @@ func unTarGz(targetdir string, reader io.ReadCloser) error {
 func setAttrs(target string, header *tar.Header) {
 	os.Chmod(target, os.FileMode(header.Mode))
 	os.Chtimes(target, header.AccessTime, header.ModTime)
-}
-
-// return current working directory
-func getPwd() (string, error) {
-	pwd, err := os.Getwd()
-	if err != nil {
-		return "", errors.New("Cannot get working directory")
-	}
-	return pwd, nil
 }

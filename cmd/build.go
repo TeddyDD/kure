@@ -49,7 +49,7 @@ func init() {
 }
 
 func updateAll() error {
-	pwd, err := getPwd()
+	pwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func updateAll() error {
 }
 
 func updateNetkanFile(path string) error {
-	pwd, err := getPwd()
+	pwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
