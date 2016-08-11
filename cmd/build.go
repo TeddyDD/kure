@@ -1,11 +1,12 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
+	"fmt"
+
+	"github.com/keegancsmith/shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -26,43 +27,19 @@ var buildCmd = &cobra.Command{
 		if c := checkWorkspace(); c != nil {
 			return c
 		}
-		pwd, _ := getPwd()
-		var ckanArgs []string
-		// Args for all files
-		if verbose {
-			ckanArgs = append(ckanArgs, "--verbose")
-		}
-		// cacheDir, _ := filepath.Abs(viper.GetString("cachedir"))
-		cacheDir := viper.GetString("cachedir")
-		cacheDir, _ = filepath.Abs(cacheDir)
-		fmt.Println("PWD ", pwd)
-		// cacheDir := filepath.Join(pwd, "cache", "download")
-		if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
-			Warn("Directory %s not exist. Using default cache.\n", cacheDir)
-		}
-		outputDir, _ := filepath.Abs("./local/ckan")
-		ckanArgs = append(ckanArgs, fmt.Sprintf("--outputdir=\"%s\"", outputDir))
-		ckanArgs = append(ckanArgs, fmt.Sprintf("--cachedir=\"%s\"", cacheDir))
-		ckanExe := filepath.Join(pwd, "cache", "bin", "netkan.exe")
-
-		if len(args) == 0 {
-			err := filepath.Walk(filepath.Join(pwd, "local", "netkan"),
-				func(path string, f os.FileInfo, err error) error {
-					if !f.IsDir() {
-						finalArgs := append(ckanArgs, path)
-						fmt.Printf("File %s Args: %v\n", f.Name(), ckanArgs)
-						cmd := exec.Command(ckanExe, finalArgs...)
-						o, e := cmd.Output()
-						Done("netkan output for %s:\n%s\n", f.Name(), string(o))
-						return e
-					}
-					return nil
-				})
-			if err != nil {
-				return err
+		var err error
+		if len(args) > 0 {
+			for _, p := range args {
+				p, err := filepath.Abs(p)
+				if err != nil {
+					return err
+				}
+				err = updateNetkanFile(p)
 			}
+		} else {
+			err = updateAll()
 		}
-		return nil
+		return err
 	},
 }
 
@@ -70,4 +47,54 @@ func init() {
 	RootCmd.AddCommand(buildCmd)
 	buildCmd.Flags().BoolVarP(&verboseNetkan, "verbose-netkan", "V", false, "Print verbose output of netkan.exe tool")
 	buildCmd.Flags().BoolVarP(&prereleaseNetkan, "prerelease", "p", false, "netkan.exe tool will index github prereleases")
+}
+
+func updateAll() error {
+	pwd, err := getPwd()
+	if err != nil {
+		return err
+	}
+	err = filepath.Walk(filepath.Join(pwd, "local", "netkan"),
+		func(path string, f os.FileInfo, err error) error {
+			if !f.IsDir() {
+				Done("Buiding %s\n", filepath.Base(path))
+				return updateNetkanFile(path)
+			}
+			return nil
+		})
+
+	return nil
+}
+
+func updateNetkanFile(path string) error {
+	pwd, err := getPwd()
+	if err != nil {
+		return err
+	}
+	cacheDir := viper.GetString("cachedir")
+	outputDir := "./local/ckan"
+	netkanFile, err := filepath.Rel(pwd, path)
+	if err != nil {
+		return nil
+	}
+	// netkan flags
+	netkanVerboseFlag := ""
+	if verboseNetkan {
+		netkanVerboseFlag = "--verbose"
+	}
+	netkanPrereleaseFlag := ""
+	if prereleaseNetkan {
+		netkanPrereleaseFlag = "--prerelease"
+	}
+	out, err := shell.Commandf("./cache/bin/netkan.exe %s %s --cachedir=\"%s\" --outputdir=\"%s\" '%s'",
+		netkanVerboseFlag,
+		netkanPrereleaseFlag,
+		cacheDir,
+		outputDir,
+		netkanFile).Output()
+	fmt.Print(string(out))
+	if err != nil {
+		return err
+	}
+	return nil
 }
