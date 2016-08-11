@@ -53,6 +53,7 @@ var initCmd = &cobra.Command{
 		dry.FileAppendString(filepath.Join(path, "kure.json"), `
 {
     "netkan_exe": "https://ckan-travis.s3.amazonaws.com/netkan.exe",
+    "cachedir" : "./cache/download/",
     "repos": [
         {
             "name": "Offical Netkan",
