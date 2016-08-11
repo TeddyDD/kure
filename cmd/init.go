@@ -20,7 +20,7 @@ var initCmd = &cobra.Command{
 	Short: "Create new directory with KURE workspace",
 	Long: `Create new directory with KURE workspace
 	KURE workspace contains your local netkan files, generated ckans and config file
-	As argument you have to provide directory name. Directory should exist and be empty`,
+	As argument you have to provide directory name to create. Directory must not exist.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return errors.New("No directory specified")
@@ -42,14 +42,17 @@ var initCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		//local
 		os.Mkdir(filepath.Join(path, "local"), DirPerm)
 		os.MkdirAll(filepath.Join(path, "local", "netkan"), DirPerm)
 		os.MkdirAll(filepath.Join(path, "local", "ckan"), DirPerm)
+		//cache
 		os.MkdirAll(filepath.Join(path, "cache", "repo"), DirPerm)
 		os.MkdirAll(filepath.Join(path, "cache", "server"), DirPerm)
 		os.MkdirAll(filepath.Join(path, "cache", "download"), DirPerm)
 		os.MkdirAll(filepath.Join(path, "cache", "bin"), DirPerm)
 
+		//default config
 		dry.FileAppendString(filepath.Join(path, "kure.json"), `
 {
     "netkan_exe": "https://ckan-travis.s3.amazonaws.com/netkan.exe",
@@ -68,7 +71,7 @@ var initCmd = &cobra.Command{
     ]
 }
 		`)
-		//Download netkan
+		//Hint
 		Done("Workspace %s created\n", args[0])
 		fmt.Println("Run `kure update -n` and `kure update` from workspace to download netkan.exe and packages.")
 
@@ -78,5 +81,4 @@ var initCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(initCmd)
-	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

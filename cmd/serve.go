@@ -37,7 +37,8 @@ var port string
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Pack your ckans into tar.gz and start local web server that will host this file.",
-	Long:  `Local web server allows you to load your ckans directly into ckan client, like from ordinary repository`,
+	Long: `Local web server allows you to load your ckans directly into ckan client, like from
+	ordinary ckan repository.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if c := checkWorkspace(); c != nil {
 			return c
@@ -65,10 +66,9 @@ var serveCmd = &cobra.Command{
 		Done("Starting server. CTRL-C to stop. Addres:\n")
 		fmt.Printf("%s | localhost:%s/main.tar.gz\n", filepath.Base(pwd), port)
 		Done("Paste it into CKAN-Settings>New\n")
+
 		fs := http.FileServer(http.Dir("./cache/server"))
 		http.Handle("/", fs)
-
-		log.Println("Listening...")
 		log.Fatal(http.ListenAndServe(":"+port, nil))
 		return nil
 	},

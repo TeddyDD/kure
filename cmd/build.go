@@ -1,10 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
-
-	"fmt"
 
 	"github.com/keegancsmith/shell"
 	"github.com/spf13/cobra"
@@ -86,7 +85,8 @@ func updateNetkanFile(path string) error {
 	if prereleaseNetkan {
 		netkanPrereleaseFlag = "--prerelease"
 	}
-	out, err := shell.Commandf("./cache/bin/netkan.exe %s %s --cachedir=\"%s\" --outputdir=\"%s\" '%s'",
+	out, err := shell.Commandf("%s %s %s --cachedir=\"%s\" --outputdir=\"%s\" '%s'",
+		filepath.Join("cache", "bin", "netkan.exe"),
 		netkanVerboseFlag,
 		netkanPrereleaseFlag,
 		cacheDir,

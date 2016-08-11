@@ -68,7 +68,6 @@ func initConfig() {
 	viper.AutomaticEnv()        // read in environment variables that match
 
 	//defaults
-	viper.SetDefault("default_extension", "netkan")
 	viper.SetDefault("cachedir", "./cache/download/")
 
 	// If a config file is found, read it in.
@@ -82,7 +81,7 @@ func initConfig() {
 
 func checkWorkspace() error {
 	if !inWorkspace {
-		return errors.New("You can run this command only from workspace!")
+		return errors.New("This command can only be called from workspace!")
 	}
 	return nil
 }

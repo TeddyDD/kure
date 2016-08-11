@@ -2,23 +2,20 @@ package cmd
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"io/ioutil"
-
-	"errors"
-
 	"github.com/Songmu/prompter"
 	"github.com/fatih/color"
 	"github.com/ryanuber/columnize"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/ungerik/go-dry"
 )
 
@@ -29,41 +26,36 @@ var (
 	includeExtensions []string
 )
 
-type ckanPackage struct {
-	ID         string   //ckan identifier
-	Path       string   //filepath to package
-	Depends    []string //dependecies. Change to []ckanPackage?
-	Recommends []string //Recommended packages.
-}
-
 // searchMethod is custom type (enum)
 type searchMethod int
 
 const (
-	Simple = iota //Simple search looks for any filename witch contains given string. Case insensitive.
-	Glob          //Glob search uses standard globbing wildcards. If you don't use wildcards then you get strict search
+	//Simple search looks for any filename witch contains given string. Case insensitive.
+	Simple = iota
+	//Glob search uses standard globbing wildcards. If you don't use wildcards then you get strict search
+	Glob
 )
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
 	Use:   "get identifier",
-	Short: "Bring netkan of given identifier to your local repository",
-	Long:  `Grab package from cache and move it to local/netkans directory. From there you can edit package and generate ckan packages.`,
+	Short: "Search and copy file from cache to local repository",
+	Long: `Grab package from cache and move it to local/netkans or local/ckan directory.
+	From there you can edit package and generate ckan packages.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if c := checkWorkspace(); c != nil {
 			return c
 		}
-		//get default extension for search if not set manually
+		//get default extension for search if -i flag not set.
 		if includeExtensions == nil {
-			includeExtensions = append(includeExtensions, viper.GetString("default_extension"))
+			includeExtensions = append(includeExtensions, "netkan")
 		}
 		//Looking for ckan is quiet common so this flag makes this faster
-		//It means we looking for default + ckan!
+		//It means we looking for default + ckan.
 		if getCkan {
 			includeExtensions = append(includeExtensions, "ckan")
 		}
 
-		// var found []ckanPackage
 		if len(args) == 0 {
 			return errors.New("You need to provide id as argument!")
 		}
@@ -114,14 +106,14 @@ var getCmd = &cobra.Command{
 					result = append(result, fmt.Sprintf("%s | %s | %s\n", n("%d", i), name("%s", filepath.Base(e)), filepath.Dir(rel)))
 				}
 				fmt.Println(columnize.SimpleFormat(result))
-				Done("Run the same command again with second argument to select package.\n")
+				Done("Run the same command again, with second argument to select package.\n")
 				fmt.Printf("Example `kure get id 2` to get second pacage from the list\n")
 				return nil
 			}
 		} else if len(files) == 1 { // only one found
 			selectedPath = files[0]
 			Done("Found %s\n", filepath.Base(selectedPath))
-		} // todo add else
+		}
 		// at this point package must be selected (selectedID)
 		// handle -s flag - Show contenet of package
 		if getShow {
@@ -138,9 +130,7 @@ var getCmd = &cobra.Command{
 			fmt.Println(b.String())
 			return nil
 		}
-		// Lets get more info about this package.
 		// save it to local/netkan? If no, then this will be saved to local/ckan
-
 		var isNetkan bool
 		if ext := filepath.Ext(selectedPath); ext == ".netkan" {
 			isNetkan = true
@@ -163,14 +153,14 @@ var getCmd = &cobra.Command{
 			reg := regexp.MustCompile(`(?m)^\s*\"\$kref\"\s?\:\s?\"#\/ckan\/netkan\/(.+)\",?$`)
 			f, e := ioutil.ReadFile(selectedPath)
 			if e != nil {
-				return errors.New("Could not read souce package while copying")
+				return errors.New("Could not read source package while copying")
 			}
 			isRemote := reg.Match(f)
 			if isRemote {
 				res := reg.FindSubmatch(f)
 				url := string(res[len(res)-1])
 				Warn("Package %s is reference to remote package.\nURL: %s\n", filepath.Base(selectedPath), url)
-				downloadIt := prompter.YN("Download it istead of copying package from cache?", true)
+				downloadIt := prompter.YN("Download it instead of copying package from cache?", true)
 				if downloadIt {
 					err = downloadFile(url, path, false)
 					return err
@@ -192,10 +182,15 @@ var getCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(getCmd)
-	getCmd.Flags().BoolVarP(&getGlob, "glob", "g", false, "Search using glob pattern. Patterns are match against file name without extension.")
-	getCmd.Flags().BoolVarP(&getCkan, "ckan", "c", false, "Search for ckan packages in cache. By default this means search for netkan and ckan files.")
-	getCmd.Flags().BoolVarP(&getShow, "show", "s", false, "List source of given package.")
-	getCmd.Flags().StringSliceVarP(&includeExtensions, "include", "i", nil, "Include given extensions to search. Default extension will not be included automaticly. Example `-i=txt,frozen`")
+	getCmd.Flags().BoolVarP(&getGlob, "glob", "g", false,
+		`Search using glob pattern. Patterns are match against file name without extension.`)
+	getCmd.Flags().BoolVarP(&getCkan, "ckan", "c", false,
+		"Search for ckan packages in cache. By default this means search for netkan and ckan files.")
+	getCmd.Flags().BoolVarP(&getShow, "show", "s", false,
+		`List source of given package.`)
+	getCmd.Flags().StringSliceVarP(&includeExtensions, "include", "i", nil,
+		`Include given extensions to search. Default extension will not be included automaticly.
+		 Example "-i=txt,frozen"`)
 }
 
 // get files with given extension and id.
@@ -224,9 +219,4 @@ func getFiles(id string, extensions []string, method searchMethod) ([]string, er
 			return nil
 		})
 	return result, err
-}
-
-func visit(path string, f os.FileInfo, err error) error {
-	fmt.Printf("Visited: %s\n", path)
-	return nil
 }
