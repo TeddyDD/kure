@@ -137,7 +137,7 @@ var getCmd = &cobra.Command{
 		} else if ext == ".ckan" {
 			isNetkan = false
 		} else {
-			Warn("If this package is netkan with chanded extension anwser yes. Otherwise pacage will be saved to local/ckan\n")
+			Warn("If this package is netkan with changed extension anwser yes. Otherwise pacage will be saved to local/ckan\n")
 			isNetkan = prompter.YN("Is this valid netkan package?", false)
 		}
 
