@@ -2,27 +2,29 @@
 
 ## Description
 
-Kure is netkan.exe helper that allows easly create local repository with .netkan packages,
-generate ckan packages from them and pipe ready packages to CKAN client.
+Kure is netkan.exe helper that allows easily create local repository with
+`.netkan` packages, generate `.ckan` packages from them and pipe ready
+packages to CKAN client.
 
-I wrote it for personal use but I think it might be usefull for other people as well in two
-cases:
-
-- you are advanced ckan user and you want to modify existing netkan packages or create your own.
-- you are ckan metadata maintainer and you want to test your packages with complex relationships without hassle.
+Use cases:
+- you are advanced ckan user and you want to modify existing netkan packages
+or create your own.
+- you are ckan metadata maintainer and you want to test your packages with
+complex relationships without hassle.
+- you want to package mod that can't be packaged
+in official CKAN repo due to their
+[de-indexing policy](https://github.com/KSP-CKAN/CKAN/blob/master/policy/de-indexing.md)
 
 ## Disclaimers
 
-- It was written quick and dirty. Expect bugs.
-- This program was tested on Linux only. I don't have any Mac or Windows box so I will not support this platforms myself.
-If you want Mac or Windows support you have to write it. PRs welcome.
+- this is quick and dirty code I wrote four years ago. I'm shocked it still works. Here be dragons...
+- I don't care abou Windows so kure was tested only on Linux
 
-## Workflow example - lame asciicast
+## Workflow example
 
 [![asciicast](https://asciinema.org/a/5eak9x445d0yfosmn1t8ixl2t.png)](https://asciinema.org/a/5eak9x445d0yfosmn1t8ixl2t)
 
 
 ## Install
 
-`go get github.com/TeddyDD/kure`
-
+`go install github.com/TeddyDD/kure@latest`
