@@ -3,11 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
-	"github.com/keegancsmith/shell"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -62,7 +61,7 @@ func updateAll() error {
 			return nil
 		})
 
-	return nil
+	return err
 }
 
 func updateNetkanFile(path string) error {
@@ -70,11 +69,10 @@ func updateNetkanFile(path string) error {
 	if err != nil {
 		return err
 	}
-	cacheDir := viper.GetString("cachedir")
 	outputDir := filepath.Join("local", "ckan")
 	netkanFile, err := filepath.Rel(pwd, path)
 	if err != nil {
-		return nil
+		return err
 	}
 	// netkan flags
 	netkanVerboseFlag := ""
@@ -85,13 +83,28 @@ func updateNetkanFile(path string) error {
 	if prereleaseNetkan {
 		netkanPrereleaseFlag = "--prerelease"
 	}
-	out, err := shell.Commandf("%s %s %s --cachedir=\"%s\" --outputdir=\"%s\" '%s'",
-		filepath.Join("cache", "bin", "netkan.exe"),
-		netkanVerboseFlag,
+
+	mono, err := exec.LookPath("mono")
+	if err != nil {
+		return err
+	}
+	netkan, err := filepath.Abs(filepath.Join("cache", "bin", "netkan.exe"))
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(
+		mono,
+		netkan,
+		"--outputdir="+outputDir,
 		netkanPrereleaseFlag,
-		cacheDir,
-		outputDir,
-		netkanFile).Output()
+		netkanVerboseFlag,
+		netkanFile,
+	)
+	fmt.Printf("%+v\n", cmd)
+
+	out, err := cmd.CombinedOutput()
+
 	fmt.Print(string(out))
 	if err != nil {
 		return err
