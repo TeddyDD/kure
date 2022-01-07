@@ -61,7 +61,7 @@ var serveCmd = &cobra.Command{
 		if verbose {
 			fmt.Println("Creating tar.gz")
 		}
-		archiver.TarGz(filepath.Join("cache", "server", "main.tar.gz"), fileNames)
+		archiver.Archive(fileNames, filepath.Join("cache", "server", "main.tar.gz"))
 
 		// serve repository
 		Done("Starting server. CTRL-C to stop. Addres:\n")
